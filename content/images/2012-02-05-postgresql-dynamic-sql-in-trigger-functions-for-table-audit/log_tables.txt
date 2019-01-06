@@ -1,0 +1,119 @@
+--# Anlegen der HilfsFunktionen
+CREATE or replace FUNCTION get_column_names(varchar) RETURNS varchar AS $return$
+declare
+	table_name varchar;     
+	return_value varchar;	
+	x record;
+	Y INTEGER;
+	BEGIN
+Y:=0;
+return_value:='';
+for x in SELECT
+    a.attname as column,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) as "Datatype"
+FROM
+    pg_catalog.pg_attribute a
+WHERE
+    a.attnum > 0
+    AND NOT a.attisdropped
+    AND a.attrelid = (
+        SELECT c.oid
+        FROM pg_catalog.pg_class c
+            LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname like $1
+            AND pg_catalog.pg_table_is_visible(c.oid)
+    )
+loop
+if (y = 0)
+then 
+return_value = x.column;
+else
+return_value := return_value ||','|| x.column;
+end if; 
+Y = Y+1;
+
+end loop;
+
+return return_value;
+    END;
+$return$ LANGUAGE plpgsql;
+
+
+
+
+
+--erzeugen von Log Tabellen
+CREATE or replace FUNCTION create_log_tables() RETURNS void AS $return$
+declare
+x record;
+	BEGIN
+
+  for x in select * from information_schema.tables where table_schema = 'public' and table_name not like '%log' loop 
+
+   BEGIN
+  execute 'create table '||x.table_name||'_log as select now() as update_time,a.* from '||x.table_name||' as a where 1=2'; 
+EXCEPTION when DUPLICATE_TABLE then
+raise notice 'Tabelle %_log existiert bereits. Wird ignoriert',x.table_name;
+  END;  
+    
+  end loop;
+    END;
+$return$ LANGUAGE plpgsql;
+
+
+
+
+--erzeugen von Log Funktionen
+CREATE or replace FUNCTION create_log_function() RETURNS void AS $return$
+declare
+x record;
+sql_statement text ;
+	BEGIN
+
+  for x in select * from information_schema.tables where table_schema = 'public' and table_name not like '%log' loop 
+
+   BEGIN
+  execute'CREATE FUNCTION '||x.table_name||'_update_log() RETURNS trigger AS $function$ declare	BEGIN
+  insert into '||x.table_name||'_log (update_time,'||get_column_names(x.table_name)||') values (now(),old.*);
+return NULL;
+    END;
+$function$ LANGUAGE plpgsql'; 
+
+   
+EXCEPTION when DUPLICATE_FUNCTION then
+raise notice 'Funktion %_update_log() existiert bereits. Wird ignoriert',x.table_name;
+  END;  
+    
+  end loop;
+    END;
+$return$ LANGUAGE plpgsql;
+
+
+
+
+
+
+
+--erzeugen von Log Triggern
+CREATE or replace FUNCTION create_log_trigger() RETURNS void AS $return$
+declare
+x record;
+sql_statement text ;
+	BEGIN
+
+  for x in select * from information_schema.tables where table_schema = 'public' and table_name not like '%log' loop 
+
+   BEGIN
+  execute 'CREATE TRIGGER tr_'||x.table_name||'_update_log after DELETE OR UPDATE
+    ON '||x.table_name||' FOR EACH ROW 
+    EXECUTE PROCEDURE '||x.table_name||'_update_log()'; 
+
+   
+EXCEPTION when DUPLICATE_OBJECT then
+raise notice 'Trigger tr_%_update_log() existiert bereits. Wird ignoriert',x.table_name;
+  END;  
+    
+  end loop;
+    END;
+$return$ LANGUAGE plpgsql;
+

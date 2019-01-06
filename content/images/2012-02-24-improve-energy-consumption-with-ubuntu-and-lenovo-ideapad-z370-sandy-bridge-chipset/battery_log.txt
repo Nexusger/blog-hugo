@@ -1,0 +1,74 @@
+#debug
+#set -x
+
+#Which battery should be tested. Usualy it's BAT0, but hey, not in my computer...
+battery="BAT1"
+
+#Where should the log be created?
+logfile=~/battery_log-`date '+%Y.%m.%d-%R'`
+
+#how long should the logging endure?
+logging_time_in_minutes=30
+
+#how many seconds should lay between two measurements?
+logging_interval_in_seconds=5 
+
+#####################################
+
+file=$logfile.txt
+picture=$logfile.png
+
+times_to_log=$(($logging_time_in_minutes * 60 / $logging_interval_in_seconds ))
+
+#max and min power (for the gnuplot range)
+maxpower="0"
+minpower="10000000"
+
+#starting the logfile. Let there ligh... a date/time combination
+echo `date` >> $file
+
+#with an sleep onb 5 seconds, a count to 360 is exactly half an hour
+while [[ $count -lt $times_to_log ]]; do
+
+#ampere is the value of electric charge. measured in milliampere
+ampere=`grep rate /proc/acpi/battery/$battery/state | cut -f14 -d" "`
+
+#voltage is the vlaue of the current. measured in millivolt
+voltage=`grep voltage /proc/acpi/battery/$battery/state | cut -f11 -d" "`
+
+#power is the multiplication of ampere and voltage, measured in microwatt
+power=$(( $ampere * $voltage))
+#set maxpower
+if [[ $power -gt $maxpower ]]; then
+  maxpower=$power
+fi
+
+#set minpower
+if [[ $power -lt $minpower ]]; then
+  minpower=$power
+fi
+
+#echo $ampere \* $voltage = $power
+echo $power >> $file
+(( count += 1 ))
+
+sleep 5
+done
+#again a date
+echo `date` >> $file
+
+
+echo minpower ist $minpower
+echo maxpower ist $maxpower
+
+##################
+#gnuplot
+gnuplot <<EOF 
+row=0
+set yrange[$minpower/1000:$maxpower/1000]
+set xrange[0:$count]
+set term png size 800,600
+set output "$picture"
+set grid
+plot "$file" using (row,row=row+1):(\$1/1000) title 'Milliwatt' with lines
+EOF

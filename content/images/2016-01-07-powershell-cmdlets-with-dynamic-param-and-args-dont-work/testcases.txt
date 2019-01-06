@@ -1,0 +1,22 @@
+#This file contains all the test cases
+
+##Without parameter
+mix
+
+##Without parameter, hitting tab
+mix [tab]
+
+##One parameter, valid task
+mix help
+
+##One parameter, invalid task
+mix xxxx
+
+##One parameter, autocompletion finishes task
+mix he[tab]
+
+##One parameter, with arguments
+mix help --names
+
+##One parmeter, multiple arguments
+mix phoenix.new --no-brunch --no-ecto

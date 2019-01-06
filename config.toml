@@ -1,0 +1,13 @@
+baseURL = "http://example.org/"
+languageCode = "en-us"
+title = "Stuff"
+
+[menu]
+	[[menu.main]]
+		name = "About me"
+		identifier = "me"
+		url = "me"
+    [[menu.main]]
+		name = "Imprint"
+		identifier = "imprint"
+		url = "imprint"

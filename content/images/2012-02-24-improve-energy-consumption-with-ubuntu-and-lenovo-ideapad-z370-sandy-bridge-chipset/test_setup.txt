@@ -1,0 +1,20 @@
+Setup:
+  Hardware
+    Plain Vanilla Lenovo Z370
+    Sata 2 SSD 60GB
+  Software
+    Ubuntu 11.10 64bit (Kernel 3.0.0.16-generic)
+    Driver for Ideapad unknown keycode
+    Current Updates (security, updates, backports)
+  Configurations
+    Bluetooth deactivated
+    WIFI active
+    energy: Never go to standby
+    powertop: "Wireless Power Saving for interface wlan0"
+            "Autosuspend for USB device Broadcom Bluetooth 2.1 Device (Broadcom Corp)" 
+  active process
+    Thunderbird 10.0.2 (5 Mail accounts, with every 10 minutes lookup)
+    Firefox 10.0.2 (10 Tabs, no excessive JavaScript)
+    Byobu terminal
+    Dropbox
+    My logging script (reading a file, sleep 5 seconds, reading a file...)
